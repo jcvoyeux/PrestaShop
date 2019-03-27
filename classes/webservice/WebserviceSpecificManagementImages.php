@@ -866,8 +866,17 @@ class WebserviceSpecificManagementImagesCore implements WebserviceSpecificManage
             // Add the image
             case 'POST':
                 if ($filename_exists) {
-                    throw new WebserviceException('This image already exists. To modify it, please use the PUT method', array(65, 400));
-                } else {
+                    if ($this->imageType == 'products') {
+                        if ($this->writePostedImageOnDisk($filename, null, null, $image_sizes, $directory)) {
+                            $this->imgToDisplay = $filename;
+                            return true;
+                        } else {
+                            throw new WebserviceException('Unable to save this image.', array(62, 500));
+                        }
+                    } else {
+                        throw new WebserviceException('This image already exists. To modify it, please use the PUT method.', array(65, 400));
+                    }
+                 } else {
                     if ($this->writePostedImageOnDisk($filename, null, null, $image_sizes, $directory)) {
                         return true;
                     } else {
@@ -1127,18 +1136,21 @@ class WebserviceSpecificManagementImagesCore implements WebserviceSpecificManage
                         if (!Validate::isLoadedObject($product)) {
                             throw new WebserviceException('Product ' . (int) $this->wsObject->urlSegment[2] . ' does not exist', array(76, 400));
                         }
-                        $image = new Image();
-                        $image->id_product = (int) ($product->id);
-                        $image->position = Image::getHighestPosition($product->id) + 1;
+                        $image = new Image((int)$this->wsObject->urlSegment[3]);
+                        if (!Validate::isLoadedObject($image))  {
+                            // new image
+                            $image = new Image();
+                            $image->id_product = (int)($product->id);
+                            $image->position = Image::getHighestPosition($product->id) + 1;
+                            if (!Image::getCover((int)$product->id)) {
+                                $image->cover = 1;
+                            } else {
+                                $image->cover = 0;
+                            }
 
-                        if (!Image::getCover((int) $product->id)) {
-                            $image->cover = 1;
-                        } else {
-                            $image->cover = 0;
-                        }
-
-                        if (!$image->add()) {
-                            throw new WebserviceException('Error while creating image', array(76, 400));
+                            if (!$image->add()) {
+                                throw new WebserviceException('Error while creating image', array(76, 400));
+                            }
                         }
                         if (!Validate::isLoadedObject($product)) {
                             throw new WebserviceException('Product ' . (int) $this->wsObject->urlSegment[2] . ' does not exist', array(76, 400));
