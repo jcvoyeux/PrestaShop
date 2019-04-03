@@ -338,6 +338,7 @@ class ProductCore extends ObjectModel
             'cache_has_attachments' => array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
             'is_virtual' => array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
             'state' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+            'out_of_stock' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
             'additional_delivery_times' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
             'delivery_in_stock' => array(
                 'type' => self::TYPE_STRING,
