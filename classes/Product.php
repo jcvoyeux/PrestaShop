@@ -537,6 +537,15 @@ class ProductCore extends ObjectModel
                     'quantity' => [],
                 ],
             ],
+            'carriers' => array('resource' => 'carrier',
+                'getter' => 'getWsCarriers',
+                'setter' => 'setWsCarriers',	
+                'fields' => array(
+                    'id' => array('required' => true),
+                    'id_shop' => array('required' => true),
+                ),
+            ),
+            
         ],
     ];
 
@@ -6612,6 +6621,43 @@ class ProductCore extends ObjectModel
 
         return $success;
     }
+    
+	/*
+	* Pour les webservices
+	* Renvoie la liste des carriers spécifique à un article
+	* AND pc.id_shop = ' . (int) $this->id_shop_default . ' ???
+	*/
+    public function getWsCarriers()
+    {
+        $carriers = Db::getInstance()->executeS(
+            'SELECT pc.id_carrier_reference AS id, pc.id_shop AS id_shop
+            FROM `'      . _DB_PREFIX_ . 'product_carrier` pc
+            LEFT JOIN `' . _DB_PREFIX_ . 'carrier` c ON (pc.id_carrier_reference = c.id_carrier)
+            WHERE pc.id_product = ' . (int) $this->id . ' AND c.active = 1'
+            );	
+			
+        return $carriers;
+    }
+	
+	/*
+	* Pour les webservices
+	* Supprime les anciens carrieres
+	* Pour chaque carrier
+	* 	Vérifie qu'il existe
+	* 	Si oui l'insère
+	*/
+	public function setWsCarriers($carriers)
+	{
+		Db::getInstance()->execute('DELETE FROM `' . _DB_PREFIX_ . 'product_carrier`
+		WHERE (`id_product` = ' . (int) $this->id . ')');
+        foreach ($carriers as $carrier) {
+            Db::getInstance()->execute('INSERT INTO `' . _DB_PREFIX_ . 'product_carrier` (`id_product`, `id_shop`, `id_carrier_reference`)
+			VALUES (' . (int) $this->id . ', ' . (int) $carrier['id_shop'] . ', ' . (int) $carrier['id'] . ')');
+        }
+        return true;	
+	}
+
+    
 
     /**
      * For a given product, returns its real quantity.
